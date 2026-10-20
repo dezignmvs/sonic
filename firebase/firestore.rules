@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow create: if owns(uid) && request.resource.data.keys().hasOnly(['displayName', 'email', 'photoURL', 'createdAt', 'preferences']);
+      allow read, update, delete: if owns(uid);
+    }
+
+    match /tracks/{trackId} {
+      allow read: if resource.data.visibility == 'public' || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.source == 'upload'
+        && request.resource.data.keys().hasOnly(['ownerUid','title','artist','album','genre','releaseYear','duration','audioUrl','audioPublicId','artworkUrl','artworkPublicId','source','license','createdAt','visibility']);
+      allow update, delete: if signedIn() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    match /playlists/{playlistId} {
+      allow read, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','name','description','artworkUrl','trackIds','createdAt','updatedAt']);
+      allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    match /userLibrary/{uid} {
+      allow read, write: if owns(uid);
+    }
+    match /playbackState/{uid} {
+      allow read, write: if owns(uid);
+    }
+  }
+}

@@ -1,0 +1,8 @@
+import { JAMENDO_CLIENT_ID } from '../config.js';
+
+const API='https://api.jamendo.com/v3.0';
+export function available(){return Boolean(localStorage.getItem('sonic:jamendoClientId')||JAMENDO_CLIENT_ID);}
+function normalize(track){return {id:`jamendo:${track.id}`,providerId:String(track.id),source:'Jamendo',title:track.name||'Untitled',artist:track.artist_name||'Unknown artist',album:track.album_name||'Single',artwork:track.image||track.album_image||'',duration:Number(track.duration)||0,genre:track.musicinfo?.tags?.genres?.join(', ')||'',license:track.license_ccurl||'Check track page for terms',permalink:track.shareurl||track.shorturl||`https://www.jamendo.com/track/${track.id}`,audioUrl:track.audio||''};}
+async function request(params={}){const clientId=localStorage.getItem('sonic:jamendoClientId')||JAMENDO_CLIENT_ID;if(!clientId)throw new Error('Jamendo needs a client ID.');const url=new URL(`${API}/tracks/`);Object.entries({client_id:clientId,format:'json',limit:24,audioformat:'mp32',include:'licenses musicinfo',type:'single albumtrack',...params}).forEach(([k,v])=>url.searchParams.set(k,v));const response=await fetch(url);if(!response.ok)throw new Error(`Jamendo returned ${response.status}`);const json=await response.json();if(json.headers?.status!=='success')throw new Error(json.headers?.error_message||'Jamendo request failed');return (json.results||[]).map(normalize).filter(t=>t.audioUrl);}
+export function trending(limit=18){return request({limit,order:'popularity_week'});}
+export function search(query,limit=24){if(!query.trim())return Promise.resolve([]);return request({limit,search:query});}
