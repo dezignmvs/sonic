@@ -1,5 +1,5 @@
-const CACHE = 'sonic-shell-v48';
-const SHELL = ['./', './index.html', './offline.html', './manifest.webmanifest', './css/styles.css', './js/app.js', './js/config.js', './js/api/audius.js', './js/api/jamendo.js', './js/api/saavn.js', './assets/icons/icon.svg'];
+const CACHE = 'sonic-shell-v52';
+const SHELL = ['./', './index.html', './offline.html', './manifest.webmanifest', './css/styles.css', './js/app.js', './js/config.js', './js/firebase.js', './js/api/audius.js', './js/api/jamendo.js', './js/api/saavn.js', './assets/icons/icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
 });

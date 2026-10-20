@@ -14,6 +14,19 @@ export async function login(email,password) { const x=await initializeFirebase()
 export async function logout() { const x=await initializeFirebase(); return x.authSdk.signOut(x.auth); }
 export async function resetPassword(email) { const x=await initializeFirebase(); return x.authSdk.sendPasswordResetEmail(x.auth,email); }
 export async function savePrivateDocument(collection,id,data) { const x=await initializeFirebase(); const uid=x.auth.currentUser?.uid; if(!uid)throw new Error('Sign in first.'); await x.firestoreSdk.setDoc(x.firestoreSdk.doc(x.db,collection,id),{...data,ownerUid:uid,updatedAt:x.firestoreSdk.serverTimestamp()},{merge:true}); }
-export async function watchUser(callback) { const x=await initializeFirebase(); return x.authSdk.onAuthStateChanged(x.auth,callback); }
+export async function watchUser(callback) {
+  const x=await initializeFirebase();
+  let anonymousSignInPending=false;
+  return x.authSdk.onAuthStateChanged(x.auth,user=>{
+    if(user){callback(user);return;}
+    if(anonymousSignInPending)return;
+    anonymousSignInPending=true;
+    x.authSdk.signInAnonymously(x.auth).catch(error=>{
+      anonymousSignInPending=false;
+      console.warn('Firebase anonymous sign-in failed:',error.message);
+      callback(null);
+    });
+  });
+}
 export async function saveUploadedTrack(track) { const x=await initializeFirebase(); const uid=x.auth.currentUser?.uid; if(!uid)throw new Error('Sign in to publish an upload.'); const ref=x.firestoreSdk.doc(x.db,'tracks',crypto.randomUUID()); await x.firestoreSdk.setDoc(ref,{ownerUid:uid,title:track.title,artist:track.artist,album:track.album||'Single',genre:track.genre||'',releaseYear:track.releaseYear||null,duration:track.duration||0,audioUrl:track.audioUrl,audioPublicId:track.audioPublicId,artworkUrl:track.artworkUrl||'',artworkPublicId:track.artworkPublicId||'',source:'upload',license:'Uploaded by owner',createdAt:x.firestoreSdk.serverTimestamp(),visibility:'private'}); return ref.id; }
 export async function getMyTracks() { const x=await initializeFirebase(); const uid=x.auth.currentUser?.uid; if(!uid)return []; const q=x.firestoreSdk.query(x.firestoreSdk.collection(x.db,'tracks'),x.firestoreSdk.where('ownerUid','==',uid)); const snap=await x.firestoreSdk.getDocs(q); return snap.docs.map(doc=>{const d=doc.data();return {...d,id:`firebase:${doc.id}`,source:'Your upload',artwork:d.artworkUrl||''};}); }

@@ -43,10 +43,10 @@ To add the optional keys, copy `js/config.example.js` to `js/config.js` and set 
 ## Firebase setup
 
 1. Create a Firebase project and register a web app.
-2. Enable Email/Password in Firebase Authentication and create Firestore.
-3. Copy the public web app fields into `FIREBASE_CONFIG` in `js/config.js`.
-4. Publish `firebase/firestore.rules` and `firebase/firestore.indexes.json` with the Firebase CLI.
-5. The `js/firebase.js` module provides initialization, email registration/login/logout, password reset, and an owner-scoped document helper.
+2. Enable Anonymous in Firebase Authentication and create the default Firestore database.
+3. Put the public web app fields in `FIREBASE_CONFIG` in `js/config.js`.
+4. Create the default Firestore database in the Firebase console, then run `firebase deploy --only firestore` from this folder to publish the included rules and indexes.
+5. The `js/firebase.js` module signs visitors in anonymously and includes email registration/login/logout, password reset, and owner-scoped database helpers.
 
 Firebase keys in browser apps are public identifiers; authorization comes from Auth and Security Rules, not hiding buttons. Review rules before deployment. Settings exposes email registration, sign-in, sign-out, and password reset when credentials are filled in. Cloud uploads require a signed-in user. General playlist/library sync is still not wired; user-created playlists and likes currently remain local to the device.
 
